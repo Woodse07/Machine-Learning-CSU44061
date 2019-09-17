@@ -2,43 +2,218 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-
-train_data = pd.read_csv('tcd ml 2019-20 income prediction training (with labels).csv')
-train_data = train_data.fillna(train_data.mean())
-
-print(train_data.head(3))
-print(train_data.min())
-print(train_data.max())
+from sklearn import preprocessing
+from sklearn.model_selection import train_test_split
+from sklearn import linear_model
+import csv
+from sklearn.base import TransformerMixin
+from pycountry_convert import country_alpha2_to_continent_code, country_name_to_country_alpha2
+from sklearn import svm
+from sklearn.ensemble import RandomForestRegressor
 
 # Functions
+def test_model(train_data):
+	test_data = pd.read_csv('tcd ml 2019-20 income prediction test (without labels).csv')
+	train_data[(train_data['Gender'] == '0')] = None
+	train_data[(train_data['University Degree'] == '0')] = None
+	test_data = test_data.fillna(test_data.median())
+	test_data = test_data.fillna("unknown")
+
+	#print(test_data['University Degree'].value_counts())
+
+	print(test_data.head())
+
+
+	# Applying Transformations
+	test_data = simplify_ages(test_data)
+	test_data = simplify_city_size(test_data)
+	test_data = simplify_yor(test_data)
+	test_data = simplify_height(test_data)
+
+	# Dropping useless features
+	test_data = drop_features(test_data)
+
+	print(test_data.head(3))
+
+	# Encoding Features
+	test_data = test_data[test_data.columns[:-1]]
+	test_data = encode_features(test_data)
+
+
+	print(test_data.head(3))
+
+	# Extracting Features
+	X = train_data[train_data.columns[:-1]]
+
+	# Extracting Income
+	Y = train_data[train_data.columns[-1]]
+
+	# Linear Regression
+	regr = linear_model.LinearRegression()
+	regr.fit(X, Y)
+	y_pred = regr.predict(test_data)
+
+	with open('tcd ml 2019-20 income prediction submission file.csv') as csv_file:
+		csv_reader = csv.reader(csv_file, delimiter=',')
+		line_count = 0
+		with open('tcd ml 2019-20 income prediction submission file done.csv', 'w') as write_file:
+			writer = csv.writer(write_file)
+			for row in csv_reader:
+				if line_count == 0:
+					line_count += 1
+					writer.writerow(row)
+				else:
+					row[1] = y_pred[line_count-1]
+					line_count += 1
+					writer.writerow(row)
+
+
 def simplify_ages(df):
 	df.Age = df.Age.fillna(-0.5)
-	bins = (-1,0,5,12,18,25,35,45,60,120)
-	group_names = ['Unknown', 'Baby', 'Child', 'Teenager', 'Student', 'Young Adult', 'Young Adult 2', 'Adult', 'Senior']
+	bins = (0,15,20,25,30,35,40,45,50,55,60,65,70,120)
+	group_names = ['0-15', '15-20', '20-25', '25-30', '30-35', '35-40', '40-45', '45-50', '50-55', '55-60', '60-65', '65-70', '70-120']
 	df.Age = pd.cut(df.Age, bins, labels=group_names)
 	return df
 
 def simplify_city_size(df):
 	df['Size of City'] = df['Size of City'].fillna(-0.5)
-	bins = (-1,0,50000, 200000, 500000, 1000000, 1500000, 10000000)
-	group_names = ['Unknown', 'Empty', 'Small', 'Medium', 'Medium-Big', 'Big', 'Huge']
+	bins = (-1,0,72734,286000,506092,750000,1184501,25000000,50000000)
+	group_names = ['Unknown', '1_quartile', '1b_quartile', '2_quartile', '2_quartileb', '3_quartile', '3_quartileb', '4_quartile']
 	df['Size of City'] = pd.cut(df['Size of City'], bins, labels=group_names)
+	return df
+
+def simplify_yor(df):
+	df['Year of Record'] = df['Year of Record'].fillna(-0.5)
+	bins = (-1,1979,1985,1990,1995,2000,2005,2010,2015,2020)
+	group_names = ['unknown', '1980s', '1985s', '1990s', '1995s', '2000s', '2005s', '2010s', '2015s']
+	df['Year of Record'] = pd.cut(df['Year of Record'], bins, labels=group_names)
+	return df
+
+def simplify_height(df):
+	df['Body Height [cm]'] = df['Body Height [cm]'].fillna(-0.5)
+	bins = (-1, 90, 110, 130, 150, 160, 165, 170, 175, 180, 185, 190, 195, 200, 270)
+	group_names = ['Unknown', '90-110', '110-130', '130-150', '150-160', '160-165', '165-170', '170-175', '175-180', '180-185', '185-190', '190-195', '195-200', '200-270']
+	df['Body Height [cm]'] = pd.cut(df['Body Height [cm]'], bins, labels=group_names)
 	return df
 
 def drop_features(df):
 	df = df.drop('Hair Color', axis=1)
 	df = df.drop('Wears Glasses', axis=1)
 	df = df.drop('Instance', axis=1)
-	df = df.drop('University Degree', axis=1)
-	df = df.drop('Gender', axis=1)
+	#df = df.drop('University Degree', axis=1)
+	#df = df.drop('Gender', axis=1)
+	#df = df.drop('Profession', axis=1)
 	return df
+
+def encode_features(df):
+	features = ['University Degree', 'Age', 'Country', 'Size of City', 'Body Height [cm]', 'Year of Record', 'Gender', 'Profession']
+	for feature in features:
+		le = preprocessing.LabelEncoder()
+		df[feature] = le.fit_transform(df[feature].astype(str))
+	return df
+
+
+train_data = pd.read_csv('tcd ml 2019-20 income prediction training (with labels).csv')
+#train_data = train_data.dropna()
+train_data[(train_data['Gender'] == '0')] = None
+train_data[(train_data['University Degree'] == '0')] = None
+train_data = train_data.fillna(train_data.median())
+train_data = train_data.fillna("unknown")
+
+# This adds a continent column, didn't seem to improve anything 
+#countries = train_data['Country']
+#continents = []
+#for country in countries:
+#	try:
+#		continents.append((country_alpha2_to_continent_code(country_name_to_country_alpha2(country))))
+#	except:
+#		continents.append('unknown')
+
+#train_data['Continents'] = continents
+
+
+#temp = 'University Degree'
+#print(train_data[temp].value_counts())
+#print(train_data[temp].describe())
+
+print(train_data.head(3))
+
+#print("\nMinimums: ")
+#print(train_data.min())
+#print("\nMaximums: ")
+#print(train_data.max())
+
+print("\n")
 
 
 # Applying Transformations
 train_data = simplify_ages(train_data)
 train_data = simplify_city_size(train_data)
+train_data = simplify_yor(train_data)
+train_data = simplify_height(train_data)
 
 # Dropping useless features
 train_data = drop_features(train_data)
 
 print(train_data.head(3))
+
+# Encoding Features
+train_data = encode_features(train_data)
+
+#print(train_data.head(3))
+
+
+
+# Extracting Features
+X = train_data[train_data.columns[:-1]]
+
+# Extracting Income
+Y = train_data[train_data.columns[-1]]
+
+# Splitting data into training and testing
+X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_state=1) 
+
+# Linear Regression
+#regr = linear_model.LinearRegression()
+#regr.fit(X_train, y_train)
+#y_pred = regr.predict(X_test)
+#print("\n")
+#print(regr.score(X_test, y_test))
+
+# Lasso
+#regr = linear_model.Lasso()
+#regr.fit(X_train, y_train)
+#y_pred = regr.predict(X_test)
+#print(regr.score(X_test, y_test))
+
+# Random Forest
+rf = RandomForestRegressor(n_estimators = 15, random_state = 42)
+rf.fit(X_train, y_train)
+y_pred = rf.predict(X_test)
+print(rf.score(X_test, y_test))
+
+errors = abs(y_pred - y_test)
+print(np.mean(errors)**2)
+
+
+
+print(X_train.head())
+
+for i in range(5):
+	print(y_pred[5])
+
+
+#test_model(train_data)
+
+
+
+
+
+
+
+
+
+
+
+
+
