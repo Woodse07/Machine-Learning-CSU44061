@@ -49,9 +49,14 @@ def test_model(train_data):
 	Y = train_data[train_data.columns[-1]]
 
 	# Linear Regression
-	regr = linear_model.LinearRegression()
-	regr.fit(X, Y)
-	y_pred = regr.predict(test_data)
+	#regr = linear_model.LinearRegression()
+	#regr.fit(X, Y)
+	#y_pred = regr.predict(test_data)
+
+	# Random Forest Regression
+	rf = RandomForestRegressor(n_estimators = 15, random_state = 42)
+	rf.fit(X_train, y_train)
+	y_pred = rf.predict(X_test)
 
 	with open('tcd ml 2019-20 income prediction submission file.csv') as csv_file:
 		csv_reader = csv.reader(csv_file, delimiter=',')
@@ -186,21 +191,17 @@ X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_
 #y_pred = regr.predict(X_test)
 #print(regr.score(X_test, y_test))
 
-# Random Forest
-rf = RandomForestRegressor(n_estimators = 15, random_state = 42)
+# Random Forest Regression
+rf = RandomForestRegressor(n_estimators = 30, random_state = 42)
 rf.fit(X_train, y_train)
 y_pred = rf.predict(X_test)
 print(rf.score(X_test, y_test))
 
-errors = abs(y_pred - y_test)
-print(np.mean(errors)**2)
 
-
-
-print(X_train.head())
-
+print(y_test.head())
+print("\n")
 for i in range(5):
-	print(y_pred[5])
+	print(y_pred[i])
 
 
 #test_model(train_data)
