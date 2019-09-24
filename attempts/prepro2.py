@@ -125,6 +125,8 @@ train_data[(train_data['University Degree'] == '0')] = None
 train_data = train_data.fillna(train_data.median())
 train_data = train_data.fillna("unknown")
 
+imputer = Imputer(missing_values='unknown', strategy='most_frequent')
+train_data = imputer.fit(train_data.data)
 
 # This adds a continent column, didn't seem to improve anything 
 #countries = train_data['Country']
@@ -210,7 +212,7 @@ for i in range(5):
 	print(y_pred[i])
 
 
-#test_model(train_data)
+test_model(train_data)
 
 
 
