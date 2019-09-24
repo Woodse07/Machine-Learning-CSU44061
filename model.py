@@ -34,6 +34,14 @@ def simplify_height(df):
 	df['Body Height [cm]'] = pd.cut(df['Body Height [cm]'], bins, labels=group_names)
 	return df
 
+def simplify_country(df):
+	grouped = df.groupby('Country')
+	grouped = grouped['Income in EUR'].agg(np.mean)
+	for i in range(len(df)):
+		train_data['Country'][i] = grouped[train_data['Country'][i]]
+	return df
+
+
 def drop_features(df):
 	df = df.drop('Hair Color', axis=1)
 	df = df.drop('Wears Glasses', axis=1)
@@ -63,6 +71,7 @@ train_data = simplify_ages(train_data)
 train_data = simplify_city_size(train_data)
 train_data = simplify_yor(train_data)
 train_data = simplify_height(train_data)
+train_data = simplify_country(train_data)
 
 # Dropping useless features
 train_data = drop_features(train_data)
