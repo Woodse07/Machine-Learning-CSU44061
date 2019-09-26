@@ -12,7 +12,7 @@ from sklearn import svm
 from sklearn.ensemble import RandomForestRegressor
 
 # Functions
-def test_model(train_data):
+def test_model(train_data, country_grouped, yor_grouped):
 	test_data = pd.read_csv('tcd ml 2019-20 income prediction test (without labels).csv')
 	test_data[(test_data['Gender'] == '0')] = None
 	test_data[(test_data['University Degree'] == '0')] = None
@@ -21,7 +21,7 @@ def test_model(train_data):
 
 	#print(test_data['University Degree'].value_counts())
 
-	print(test_data.head())
+	print(test_data['Country'].head())
 
 
 	# Applying Transformations
@@ -29,15 +29,26 @@ def test_model(train_data):
 	test_data = simplify_city_size(test_data)
 	test_data = simplify_yor(test_data)
 	test_data = simplify_height(test_data)
+	#test_data = simplify_country(test_data)
+	for i in range(len(test_data)):
+			try:
+				test_data['Country'][i] = country_grouped[test_data['Country'][i]]
+			except:
+				test_data['Country'][i] = 0
+
 
 	# Dropping useless features
 	test_data = drop_features(test_data)
 
-	print(test_data.head(3))
-
 	# Encoding Features
 	test_data = test_data[test_data.columns[:-1]]
 	test_data = encode_features(test_data)
+
+	year_avgs = []
+	for i in range(len(test_data)):
+		year_avgs.append(yor_grouped[test_data['Year of Record'][i]])
+	test_data['Yr_Record_avg'] = year_avgs
+	print(test_data['Yr_Record_avg'].head())
 
 
 	print(test_data.head(3))
@@ -54,7 +65,7 @@ def test_model(train_data):
 	#y_pred = regr.predict(test_data)
 
 	# Random Forest Regression
-	rf = RandomForestRegressor(n_estimators = 1000, random_state = 42, max_depth=7)
+	rf = RandomForestRegressor(n_estimators = 1000, max_depth=5)
 	rf.fit(X, Y)
 	y_pred = rf.predict(test_data)
 
@@ -101,6 +112,13 @@ def simplify_height(df):
 	df['Body Height [cm]'] = pd.cut(df['Body Height [cm]'], bins, labels=group_names)
 	return df
 
+def simplify_country(df):
+	grouped = df.groupby('Country')
+	grouped = grouped['Income in EUR'].agg(np.mean)
+	for i in range(len(df)):
+		train_data['Country'][i] = grouped[train_data['Country'][i]]
+	return df, grouped
+
 def drop_features(df):
 	df = df.drop('Hair Color', axis=1)
 	df = df.drop('Wears Glasses', axis=1)
@@ -111,7 +129,7 @@ def drop_features(df):
 	return df
 
 def encode_features(df):
-	features = ['University Degree', 'Age', 'Country', 'Size of City', 'Body Height [cm]', 'Year of Record', 'Gender', 'Profession']
+	features = ['University Degree', 'Age', 'Size of City', 'Body Height [cm]', 'Year of Record', 'Gender', 'Profession']
 	for feature in features:
 		le = preprocessing.LabelEncoder()
 		df[feature] = le.fit_transform(df[feature].astype(str))
@@ -119,63 +137,37 @@ def encode_features(df):
 
 
 train_data = pd.read_csv('tcd ml 2019-20 income prediction training (with labels).csv')
-#train_data = train_data.dropna()
 train_data[(train_data['Gender'] == '0')] = None
 train_data[(train_data['University Degree'] == '0')] = None
 train_data = train_data.fillna(train_data.median())
 train_data = train_data.fillna("unknown")
-
-imputer = Imputer(missing_values='unknown', strategy='most_frequent')
-train_data = imputer.fit(train_data.data)
-
-# This adds a continent column, didn't seem to improve anything 
-#countries = train_data['Country']
-#continents = []
-#for country in countries:
-#	try:
-#		continents.append((country_alpha2_to_continent_code(country_name_to_country_alpha2(country))))
-#	except:
-#		continents.append('unknown')
-
-#train_data['Continents'] = continents
-
-
-#temp = 'Age'
-#print(train_data[temp].value_counts())
-#print(train_data[temp].describe())
-
-print(train_data.head(3))
-
-#print("\nMinimums: ")
-#print(train_data.min())
-#print("\nMaximums: ")
-#print(train_data.max())
-
-print("\n")
-
 
 # Applying Transformations
 train_data = simplify_ages(train_data)
 train_data = simplify_city_size(train_data)
 train_data = simplify_yor(train_data)
 train_data = simplify_height(train_data)
+train_data, country_grouped = simplify_country(train_data)
 
 # Dropping useless features
 train_data = drop_features(train_data)
 
-print(train_data.head(3))
-
 # Encoding Features
 train_data = encode_features(train_data)
 
-#print(train_data.head(3))
+# Averaging income for YOR
+yor_grouped = train_data.groupby('Year of Record')
+yor_grouped = yor_grouped['Income in EUR'].agg(np.mean)
+print(yor_grouped.head(10))
+year_avgs = []
+for i in range(len(train_data)):
+	year_avgs.append(yor_grouped[train_data['Year of Record'][i]])
+train_data['Yr_Record_avg'] = year_avgs
+print(train_data['Yr_Record_avg'].head())
 
 
-
-# Extracting Features
+# Extracting Features & Income
 X = train_data[train_data.columns[:-1]]
-
-# Extracting Income
 Y = train_data[train_data.columns[-1]]
 
 # Splitting data into training and testing
@@ -212,7 +204,7 @@ for i in range(5):
 	print(y_pred[i])
 
 
-test_model(train_data)
+test_model(train_data, country_grouped, yor_grouped)
 
 
 

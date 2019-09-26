@@ -22,9 +22,17 @@ def simplify_city_size(df):
 
 def simplify_yor(df):
 	df['Year of Record'] = df['Year of Record'].fillna(-0.5)
-	bins = (-1,1979,1990,2000,2010,2020)
-	group_names = ['unknown', '1980s', '1990s', '2000s', '2010s']
+	bins = (-1,1979,1985,1990,1995,2000,2005,2010,2015,2020)
+	group_names = ['unknown', '1980s', '1985s', '1990s', '1995s', '2000s', '2005s', '2010s', '2015s']
 	df['Year of Record'] = pd.cut(df['Year of Record'], bins, labels=group_names)
+	grouped = df.groupby('Year of Record')
+	grouped = grouped['Income in EUR'].agg(np.mean)
+#	print(grouped.head(10))
+	#year_avgs = []
+	#for i in range(len(df)):
+#		year_avgs.append(grouped[df['Year of Record'][i]])
+#	df['Yr_Record_avg'] = year_avgs
+#	print(df['Yr_Record_avg'].head())
 	return df
 
 def simplify_height(df):
@@ -87,17 +95,17 @@ Y = train_data[train_data.columns[-1]]
 X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_state=1) 
 
 # Random Forest Regression
-#rf = RandomForestRegressor(n_estimators = 100, random_state = 42, max_depth=7)
-#rf.fit(X_train, y_train)
-#y_pred = rf.predict(X_test)
-#print(rf.score(X_test, y_test))
+rf = RandomForestRegressor(n_estimators = 100, max_depth=5)
+rf.fit(X_train, y_train)
+y_pred = rf.predict(X_test)
+print(rf.score(X_test, y_test))
 
 # Linear Regression
-regr = linear_model.LinearRegression()
-regr.fit(X_train, y_train)
-y_pred = regr.predict(X_test)
-print("\n")
-print(regr.score(X_test, y_test))
+#regr = linear_model.LinearRegression()
+#regr.fit(X_train, y_train)
+#y_pred = regr.predict(X_test)
+#print("\n")
+#print(regr.score(X_test, y_test))
 
 print(y_test.head())
 print("\n")
