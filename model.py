@@ -5,6 +5,8 @@ from sklearn.model_selection import train_test_split
 from sklearn import linear_model
 import csv
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
+from math import sqrt
 
 def simplify_ages(df):
 	df.Age = df.Age.fillna(-0.5)
@@ -60,10 +62,14 @@ def drop_features(df):
 	return df
 
 def encode_features(df):
-	features = ['University Degree', 'Age', 'Size of City', 'Body Height [cm]', 'Year of Record', 'Gender', 'Profession']
+	features = ['University Degree', 'Age', 'Size of City', 'Body Height [cm]', 'Year of Record', 'Profession']
 	for feature in features:
 		le = preprocessing.LabelEncoder()
 		df[feature] = le.fit_transform(df[feature].astype(str))
+	df.loc[df['Gender'] == 'other', 'Gender'] = 'unknown'
+	df = pd.concat([df,pd.get_dummies(df['Gender'], prefix='Gender')], axis=1)
+	df.drop(['Gender'], axis=1, inplace=True)
+	df.drop(['Gender_male'], axis=1, inplace=True)
 	return df
 
 # Loading data and dealing with NAs
@@ -88,17 +94,28 @@ train_data = drop_features(train_data)
 train_data = encode_features(train_data)
 
 # Extracting Features & income
-X = train_data[train_data.columns[:-1]]
-Y = train_data[train_data.columns[-1]]
+Y = train_data['Income in EUR']
+train_data.drop(['Income in EUR'], axis=1, inplace=True)
+X = train_data
+
+
+# Normalising Professions
+print(X.head())
+X=(X-X.min())/(X.max()-X.min())
+print(X.head())
 
 # Splitting data into training and testing
 X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_state=1) 
 
 # Random Forest Regression
-rf = RandomForestRegressor(n_estimators = 100, max_depth=5)
+rf = RandomForestRegressor(n_estimators = 100, max_depth=10)
 rf.fit(X_train, y_train)
 y_pred = rf.predict(X_test)
 print(rf.score(X_test, y_test))
+rms = sqrt(mean_squared_error(y_test, y_pred))
+print(rms)
+
+
 
 # Linear Regression
 #regr = linear_model.LinearRegression()

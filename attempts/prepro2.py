@@ -12,7 +12,7 @@ from sklearn import svm
 from sklearn.ensemble import RandomForestRegressor
 
 # Functions
-def test_model(train_data, country_grouped, yor_grouped):
+def test_model(X, Y, country_grouped):
 	test_data = pd.read_csv('tcd ml 2019-20 income prediction test (without labels).csv')
 	test_data[(test_data['Gender'] == '0')] = None
 	test_data[(test_data['University Degree'] == '0')] = None
@@ -44,20 +44,11 @@ def test_model(train_data, country_grouped, yor_grouped):
 	test_data = test_data[test_data.columns[:-1]]
 	test_data = encode_features(test_data)
 
-	year_avgs = []
-	for i in range(len(test_data)):
-		year_avgs.append(yor_grouped[test_data['Year of Record'][i]])
-	test_data['Yr_Record_avg'] = year_avgs
-	print(test_data['Yr_Record_avg'].head())
 
-
-	print(test_data.head(3))
-
-	# Extracting Features
-	X = train_data[train_data.columns[:-1]]
-
-	# Extracting Income
-	Y = train_data[train_data.columns[-1]]
+	# Normalising Data
+	print(test_data.head())
+	test_data=(test_data-test_data.min())/(test_data.max()-test_data.min())
+	print(test_data.head())
 
 	# Linear Regression
 	#regr = linear_model.LinearRegression()
@@ -65,7 +56,7 @@ def test_model(train_data, country_grouped, yor_grouped):
 	#y_pred = regr.predict(test_data)
 
 	# Random Forest Regression
-	rf = RandomForestRegressor(n_estimators = 1000, max_depth=5)
+	rf = RandomForestRegressor(n_estimators = 1000, max_depth=10)
 	rf.fit(X, Y)
 	y_pred = rf.predict(test_data)
 
@@ -129,10 +120,14 @@ def drop_features(df):
 	return df
 
 def encode_features(df):
-	features = ['University Degree', 'Age', 'Size of City', 'Body Height [cm]', 'Year of Record', 'Gender', 'Profession']
+	features = ['University Degree', 'Age', 'Size of City', 'Body Height [cm]', 'Year of Record', 'Profession']
 	for feature in features:
 		le = preprocessing.LabelEncoder()
 		df[feature] = le.fit_transform(df[feature].astype(str))
+	df.loc[df['Gender'] == 'other', 'Gender'] = 'unknown'
+	df = pd.concat([df,pd.get_dummies(df['Gender'], prefix='Gender')], axis=1)
+	df.drop(['Gender'], axis=1, inplace=True)
+	df.drop(['Gender_male'], axis=1, inplace=True)
 	return df
 
 
@@ -155,20 +150,15 @@ train_data = drop_features(train_data)
 # Encoding Features
 train_data = encode_features(train_data)
 
-# Averaging income for YOR
-yor_grouped = train_data.groupby('Year of Record')
-yor_grouped = yor_grouped['Income in EUR'].agg(np.mean)
-print(yor_grouped.head(10))
-year_avgs = []
-for i in range(len(train_data)):
-	year_avgs.append(yor_grouped[train_data['Year of Record'][i]])
-train_data['Yr_Record_avg'] = year_avgs
-print(train_data['Yr_Record_avg'].head())
-
-
 # Extracting Features & Income
-X = train_data[train_data.columns[:-1]]
-Y = train_data[train_data.columns[-1]]
+Y = train_data['Income in EUR']
+train_data.drop(['Income in EUR'], axis=1, inplace=True)
+X = train_data
+
+# Normalising Professions
+print(X.head())
+X=(X-X.min())/(X.max()-X.min())
+print(X.head())
 
 # Splitting data into training and testing
 X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_state=1) 
@@ -187,7 +177,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_
 #print(regr.score(X_test, y_test))
 
 # Random Forest Regression
-rf = RandomForestRegressor(n_estimators = 100, random_state = 42, max_depth=7)
+rf = RandomForestRegressor(n_estimators = 100, max_depth=10)
 rf.fit(X_train, y_train)
 y_pred = rf.predict(X_test)
 print(rf.score(X_test, y_test))
@@ -204,7 +194,7 @@ for i in range(5):
 	print(y_pred[i])
 
 
-test_model(train_data, country_grouped, yor_grouped)
+test_model(X, Y, country_grouped)
 
 
 
