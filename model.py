@@ -10,8 +10,8 @@ from math import sqrt
 
 def simplify_ages(df):
 	df.Age = df.Age.fillna(-0.5)
-	bins = (0,15,25,36,50,120)
-	group_names = ['0-15', '15-25', '25-36', '36-50', '50-120']
+	bins = (0,15,20,25,30,35,40,50,60,120)
+	group_names = ['0-15', '15-20', '20-25', '25-30', '30-35', '35-40', '40-50', '50-60', '60-120']
 	df.Age = pd.cut(df.Age, bins, labels=group_names)
 	return df
 
@@ -24,8 +24,8 @@ def simplify_city_size(df):
 
 def simplify_yor(df):
 	df['Year of Record'] = df['Year of Record'].fillna(-0.5)
-	bins = (-1,1979,1985,1990,1995,2000,2005,2010,2015,2020)
-	group_names = ['unknown', '1980s', '1985s', '1990s', '1995s', '2000s', '2005s', '2010s', '2015s']
+	bins = (-1,1979,1990,2000,2010,2020)
+	group_names = ['unknown', '1980s', '1990s', '2000s', '2010s']
 	df['Year of Record'] = pd.cut(df['Year of Record'], bins, labels=group_names)
 	grouped = df.groupby('Year of Record')
 	grouped = grouped['Income in EUR'].agg(np.mean)
@@ -76,7 +76,7 @@ def encode_features(df):
 train_data = pd.read_csv('tcd ml 2019-20 income prediction training (with labels).csv')
 train_data[(train_data['Gender'] == '0')] = None
 train_data[(train_data['University Degree'] == '0')] = None
-train_data = train_data.fillna(train_data.median())
+train_data = train_data.fillna(train_data.mean())
 train_data = train_data.fillna("unknown")
 
 
@@ -108,7 +108,7 @@ print(X.head())
 X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_state=1) 
 
 # Random Forest Regression
-rf = RandomForestRegressor(n_estimators = 100, max_depth=10)
+rf = RandomForestRegressor(n_estimators = 100, max_depth=8)
 rf.fit(X_train, y_train)
 y_pred = rf.predict(X_test)
 print(rf.score(X_test, y_test))

@@ -16,7 +16,7 @@ def test_model(X, Y, country_grouped):
 	test_data = pd.read_csv('tcd ml 2019-20 income prediction test (without labels).csv')
 	test_data[(test_data['Gender'] == '0')] = None
 	test_data[(test_data['University Degree'] == '0')] = None
-	test_data = test_data.fillna(test_data.median())
+	test_data = test_data.fillna(test_data.mean())
 	test_data = test_data.fillna("unknown")
 
 	#print(test_data['University Degree'].value_counts())
@@ -41,7 +41,7 @@ def test_model(X, Y, country_grouped):
 	test_data = drop_features(test_data)
 
 	# Encoding Features
-	test_data = test_data[test_data.columns[:-1]]
+	test_data.drop(['Income'], axis=1, inplace=True)
 	test_data = encode_features(test_data)
 
 
@@ -56,7 +56,7 @@ def test_model(X, Y, country_grouped):
 	#y_pred = regr.predict(test_data)
 
 	# Random Forest Regression
-	rf = RandomForestRegressor(n_estimators = 1000, max_depth=10)
+	rf = RandomForestRegressor(n_estimators = 1000, max_depth=7)
 	rf.fit(X, Y)
 	y_pred = rf.predict(test_data)
 
@@ -77,8 +77,8 @@ def test_model(X, Y, country_grouped):
 
 def simplify_ages(df):
 	df.Age = df.Age.fillna(-0.5)
-	bins = (0,15,25,36,50,120)
-	group_names = ['0-15', '15-25', '25-36', '36-50', '50-120']
+	bins = (0,15,20,25,30,35,40,50,60,120)
+	group_names = ['0-15', '15-20', '20-25', '25-30', '30-35', '35-40', '40-50', '50-60', '60-120']
 	df.Age = pd.cut(df.Age, bins, labels=group_names)
 	return df
 
@@ -134,7 +134,7 @@ def encode_features(df):
 train_data = pd.read_csv('tcd ml 2019-20 income prediction training (with labels).csv')
 train_data[(train_data['Gender'] == '0')] = None
 train_data[(train_data['University Degree'] == '0')] = None
-train_data = train_data.fillna(train_data.median())
+train_data = train_data.fillna(train_data.mean())
 train_data = train_data.fillna("unknown")
 
 # Applying Transformations
