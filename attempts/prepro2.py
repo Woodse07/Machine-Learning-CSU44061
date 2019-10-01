@@ -46,9 +46,9 @@ def test_model(X, Y, country_grouped):
 
 
 	# Normalising Data
-	print(test_data.head())
-	test_data=(test_data-test_data.min())/(test_data.max()-test_data.min())
-	print(test_data.head())
+	#print(test_data.head())
+	#test_data=(test_data-test_data.min())/(test_data.max()-test_data.min())
+	#print(test_data.head())
 
 	# Linear Regression
 	#regr = linear_model.LinearRegression()
@@ -156,9 +156,9 @@ train_data.drop(['Income in EUR'], axis=1, inplace=True)
 X = train_data
 
 # Normalising Professions
-print(X.head())
-X=(X-X.min())/(X.max()-X.min())
-print(X.head())
+#print(X.head())
+#X=(X-X.min())/(X.max()-X.min())
+#print(X.head())
 
 # Splitting data into training and testing
 X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_state=1) 
