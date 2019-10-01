@@ -7,6 +7,9 @@ import csv
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 from math import sqrt
+from scipy import stats
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 def simplify_ages(df):
 	df.Age = df.Age.fillna(-0.5)
@@ -17,15 +20,15 @@ def simplify_ages(df):
 
 def simplify_city_size(df):
 	df['Size of City'] = df['Size of City'].fillna(-0.5)
-	bins = (-1,0,72734,286000,506092,750000,1184501,25000000,50000000)
-	group_names = ['Unknown', '1_quartile', '1b_quartile', '2_quartile', '2_quartileb', '3_quartile', '3_quartileb', '4_quartile']
+	bins = (0,72734,506092,1184501,50000000)
+	group_names = ['1_quartile', '2_quartile', '3_quartile', '4_quartile']
 	df['Size of City'] = pd.cut(df['Size of City'], bins, labels=group_names)
 	return df
 
 def simplify_yor(df):
 	df['Year of Record'] = df['Year of Record'].fillna(-0.5)
-	bins = (-1,1979,1990,2000,2010,2020)
-	group_names = ['unknown', '1980s', '1990s', '2000s', '2010s']
+	bins = (1979,1990,2000,2010,2020)
+	group_names = ['1980s', '1990s', '2000s', '2010s']
 	df['Year of Record'] = pd.cut(df['Year of Record'], bins, labels=group_names)
 	grouped = df.groupby('Year of Record')
 	grouped = grouped['Income in EUR'].agg(np.mean)
@@ -39,8 +42,8 @@ def simplify_yor(df):
 
 def simplify_height(df):
 	df['Body Height [cm]'] = df['Body Height [cm]'].fillna(-0.5)
-	bins = (-1, 90, 160, 175, 191, 270)
-	group_names = ['Unknown', '90-160', '160-175', '175-191', '191-270']
+	bins = (-1, 130, 160, 175, 191, 270)
+	group_names = ['unknown', '90-160', '160-175', '175-191', '191-270']
 	df['Body Height [cm]'] = pd.cut(df['Body Height [cm]'], bins, labels=group_names)
 	return df
 
@@ -49,6 +52,13 @@ def simplify_country(df):
 	grouped = grouped['Income in EUR'].agg(np.mean)
 	for i in range(len(df)):
 		train_data['Country'][i] = grouped[train_data['Country'][i]]
+	return df
+
+def simplify_profession(df):
+	grouped = df.groupby('Profession')
+	grouped = grouped['Income in EUR'].agg(np.mean)
+	for i in range(len(df)):
+		train_data['Profession'][i] = grouped[train_data['Profession'][i]]
 	return df
 
 
@@ -66,15 +76,48 @@ def encode_features(df):
 	for feature in features:
 		le = preprocessing.LabelEncoder()
 		df[feature] = le.fit_transform(df[feature].astype(str))
-	df.loc[df['Gender'] == 'other', 'Gender'] = 'unknown'
 	df = pd.concat([df,pd.get_dummies(df['Gender'], prefix='Gender')], axis=1)
+	#df = pd.concat([df,pd.get_dummies(df['Age'], prefix='Age')], axis=1)
+	#df = pd.concat([df,pd.get_dummies(df['Year of Record'], prefix='YOR')], axis=1)
+	#df = pd.concat([df,pd.get_dummies(df['Size of City'], prefix='SOC')], axis=1)
+	#df = pd.concat([df,pd.get_dummies(df['University Degree'], prefix='Degree')], axis=1)
+	#df = pd.concat([df,pd.get_dummies(df['Body Height [cm]'], prefix='Height')], axis=1)
 	df.drop(['Gender'], axis=1, inplace=True)
 	df.drop(['Gender_male'], axis=1, inplace=True)
+	#df.drop(['Age'], axis=1, inplace=True)
+	#df.drop(['Year of Record'], axis=1, inplace=True)
+	#df.drop(['Size of City'], axis=1, inplace=True)
+	#df.drop(['University Degree'], axis=1, inplace=True)
+	#df.drop(['Body Height [cm]'], axis=1, inplace=True)
+	#df['Country'] = df['Country'] / df['Country'].max()
+	#df['Profession'] = df['Profession'] / df['Profession'].max()
 	return df
+
+def info(df):
+	print("")
+	for i in df.columns:
+		if type(df[i][1])== str:
+			print(df[i].value_counts())
+			print("")
+	print("")
+
+def plot(df):
+	fig, ((a,b),(c,d),(e,f)) = plt.subplots(3,2,figsize=(15,20))
+	plt.xticks(rotation=45)
+	sns.countplot(df['Country'],hue=df['Income in EUR'],ax=f)
+	sns.countplot(df['Age'],hue=df['Income in EUR'],ax=b)
+	sns.countplot(df['Gender'],hue=df['Income in EUR'],ax=c)
+	sns.countplot(df['Year of Record'],hue=df['Income in EUR'],ax=d)
+	sns.countplot(df['Body Height [cm]'],hue=df['Income in EUR'],ax=e)
+	sns.countplot(df['University Degree'],hue=df['Income in EUR'],ax=a)
+
 
 # Loading data and dealing with NAs
 train_data = pd.read_csv('tcd ml 2019-20 income prediction training (with labels).csv')
+#plot(train_data)
+#info(train_data)
 train_data[(train_data['Gender'] == '0')] = None
+train_data[(train_data['Gender'] == 'other')] = None
 train_data[(train_data['University Degree'] == '0')] = None
 train_data = train_data.fillna(train_data.mean())
 train_data = train_data.fillna("unknown")
@@ -86,9 +129,12 @@ train_data = simplify_city_size(train_data)
 train_data = simplify_yor(train_data)
 train_data = simplify_height(train_data)
 train_data = simplify_country(train_data)
+#train_data = simplify_profession(train_data)
 
 # Dropping useless features
 train_data = drop_features(train_data)
+
+#info(train_data)
 
 # Encoding Features
 train_data = encode_features(train_data)
@@ -98,23 +144,24 @@ Y = train_data['Income in EUR']
 train_data.drop(['Income in EUR'], axis=1, inplace=True)
 X = train_data
 
-
+# Doesn't Work
 # Normalising Professions
-print(X.head())
-X=(X-X.min())/(X.max()-X.min())
-print(X.head())
+#print(X.head())
+#X=(X-X.min())/(X.max()-X.min())
+#print(X.head())
 
 # Splitting data into training and testing
 X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_state=1) 
 
 # Random Forest Regression
-rf = RandomForestRegressor(n_estimators = 100, max_depth=8)
+rf = RandomForestRegressor(n_estimators = 1000, max_depth=10, n_jobs=-1)
 rf.fit(X_train, y_train)
 y_pred = rf.predict(X_test)
 print(rf.score(X_test, y_test))
 rms = sqrt(mean_squared_error(y_test, y_pred))
+print("")
 print(rms)
-
+print("")
 
 
 # Linear Regression
@@ -124,8 +171,10 @@ print(rms)
 #print("\n")
 #print(regr.score(X_test, y_test))
 
+print(X_test.head())
 print(y_test.head())
 print("\n")
 for i in range(5):
 	print(y_pred[i])
+
 
