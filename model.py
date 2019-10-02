@@ -10,6 +10,7 @@ from math import sqrt
 from scipy import stats
 import seaborn as sns
 import matplotlib.pyplot as plt
+from sklearn import neural_network
 
 def simplify_ages(df):
 	df.Age = df.Age.fillna(-0.5)
@@ -77,20 +78,20 @@ def encode_features(df):
 		le = preprocessing.LabelEncoder()
 		df[feature] = le.fit_transform(df[feature].astype(str))
 	df = pd.concat([df,pd.get_dummies(df['Gender'], prefix='Gender')], axis=1)
-	#df = pd.concat([df,pd.get_dummies(df['Age'], prefix='Age')], axis=1)
-	#df = pd.concat([df,pd.get_dummies(df['Year of Record'], prefix='YOR')], axis=1)
-	#df = pd.concat([df,pd.get_dummies(df['Size of City'], prefix='SOC')], axis=1)
-	#df = pd.concat([df,pd.get_dummies(df['University Degree'], prefix='Degree')], axis=1)
-	#df = pd.concat([df,pd.get_dummies(df['Body Height [cm]'], prefix='Height')], axis=1)
+	df = pd.concat([df,pd.get_dummies(df['Age'], prefix='Age')], axis=1)
+	df = pd.concat([df,pd.get_dummies(df['Year of Record'], prefix='YOR')], axis=1)
+	df = pd.concat([df,pd.get_dummies(df['Size of City'], prefix='SOC')], axis=1)
+	df = pd.concat([df,pd.get_dummies(df['University Degree'], prefix='Degree')], axis=1)
+	df = pd.concat([df,pd.get_dummies(df['Body Height [cm]'], prefix='Height')], axis=1)
 	df.drop(['Gender'], axis=1, inplace=True)
 	df.drop(['Gender_male'], axis=1, inplace=True)
-	#df.drop(['Age'], axis=1, inplace=True)
-	#df.drop(['Year of Record'], axis=1, inplace=True)
-	#df.drop(['Size of City'], axis=1, inplace=True)
-	#df.drop(['University Degree'], axis=1, inplace=True)
-	#df.drop(['Body Height [cm]'], axis=1, inplace=True)
-	#df['Country'] = df['Country'] / df['Country'].max()
-	#df['Profession'] = df['Profession'] / df['Profession'].max()
+	df.drop(['Age'], axis=1, inplace=True)
+	df.drop(['Year of Record'], axis=1, inplace=True)
+	df.drop(['Size of City'], axis=1, inplace=True)
+	df.drop(['University Degree'], axis=1, inplace=True)
+	df.drop(['Body Height [cm]'], axis=1, inplace=True)
+	df['Country'] = df['Country'] / df['Country'].max()
+	df['Profession'] = df['Profession'] / df['Profession'].max()
 	return df
 
 def info(df):
@@ -154,15 +155,14 @@ X = train_data
 X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_state=1) 
 
 # Random Forest Regression
-rf = RandomForestRegressor(n_estimators = 1000, max_depth=10, n_jobs=-1)
-rf.fit(X_train, y_train)
-y_pred = rf.predict(X_test)
-print(rf.score(X_test, y_test))
-rms = sqrt(mean_squared_error(y_test, y_pred))
-print("")
-print(rms)
-print("")
-
+#rf = RandomForestRegressor(n_estimators = 1000, max_depth=10, n_jobs=-1)
+#rf.fit(X_train, y_train)
+#y_pred = rf.predict(X_test)
+#print(rf.score(X_test, y_test))
+#rms = sqrt(mean_squared_error(y_test, y_pred))
+#print("")
+#print(rms)
+#print("")
 
 # Linear Regression
 #regr = linear_model.LinearRegression()
@@ -170,6 +170,16 @@ print("")
 #y_pred = regr.predict(X_test)
 #print("\n")
 #print(regr.score(X_test, y_test))
+
+# Neural Net
+regr = neural_network.MLPRegressor(solver = 'lbfgs', learning_rate = 'constant', activation = 'relu', verbose = True, shuffle = False, hidden_layer_sizes=(100,100,100), early_stopping = True)
+regr.fit(X_train, y_train)
+y_pred = regr.predict(X_test)
+print(regr.score(X_test, y_test))
+rms = sqrt(mean_squared_error(y_test, y_pred))
+print("")
+print(rms)
+print("")
 
 print(X_test.head())
 print(y_test.head())
