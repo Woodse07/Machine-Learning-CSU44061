@@ -11,6 +11,8 @@ from scipy import stats
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn import neural_network
+from xgboost import XGBRegressor
+from sklearn.metrics import accuracy_score
 
 def simplify_ages(df):
 	df.Age = df.Age.fillna(-0.5)
@@ -172,14 +174,25 @@ X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_
 #print(regr.score(X_test, y_test))
 
 # Neural Net
-regr = neural_network.MLPRegressor(solver = 'lbfgs', learning_rate = 'constant', activation = 'relu', verbose = True, shuffle = False, hidden_layer_sizes=(100,100,100), early_stopping = True)
-regr.fit(X_train, y_train)
-y_pred = regr.predict(X_test)
-print(regr.score(X_test, y_test))
-rms = sqrt(mean_squared_error(y_test, y_pred))
-print("")
-print(rms)
-print("")
+#regr = neural_network.MLPRegressor(solver = 'lbfgs', learning_rate = 'constant', activation = 'relu', verbose = True, shuffle = False, hidden_layer_sizes=(100,100,100), early_stopping = True)
+#regr.fit(X_train, y_train)
+#y_pred = regr.predict(X_test)
+#print(regr.score(X_test, y_test))
+#rms = sqrt(mean_squared_error(y_test, y_pred))
+#print("")
+#print(rms)
+#print("")
+
+# Xgboost
+X_train['Country'] = pd.to_numeric(X_train['Country'])
+X_test['Country'] = pd.to_numeric(X_test['Country'])
+print(X_train.dtypes)
+xgboost = XGBRegressor()
+xgboost.fit(X_train, y_train)
+print(xgboost)
+y_pred = xgboost.predict(X_test)
+accuracy = xgboost.score(X_test, y_test)
+print("Accuracy: %.2f%%" % (accuracy * 100.0))
 
 print(X_test.head())
 print(y_test.head())

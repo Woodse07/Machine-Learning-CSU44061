@@ -13,6 +13,12 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn import neural_network
 from sklearn.metrics import mean_squared_error
 from math import sqrt
+from scipy import stats
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn import neural_network
+from xgboost import XGBRegressor
+from sklearn.metrics import accuracy_score
 
 # Functions
 def test_model(X, Y, country_grouped):
@@ -65,13 +71,17 @@ def test_model(X, Y, country_grouped):
 	#rf.fit(X, Y)
 	#y_pred = rf.predict(test_data)
 
-	print(X.columns)
-	print(test_data.columns)
+	# Xgboost
+	X['Country'] = pd.to_numeric(X['Country'])
+	test_data['Country'] = pd.to_numeric(test_data['Country'])
+	xgboost = XGBRegressor()
+	xgboost.fit(X, Y)
+	y_pred = xgboost.predict(test_data)
 
 	# Neural Net
-	regr = neural_network.MLPRegressor(solver = 'lbfgs', learning_rate = 'constant', activation = 'relu', verbose = True, shuffle = False, hidden_layer_sizes=(100,100,100), early_stopping = True)
-	regr.fit(X, Y)
-	y_pred = regr.predict(test_data)
+	#regr = neural_network.MLPRegressor(solver = 'lbfgs', learning_rate = 'constant', activation = 'relu', verbose = True, shuffle = False, hidden_layer_sizes=(100,100,100), early_stopping = True)
+	#regr.fit(X, Y)
+	#y_pred = regr.predict(test_data)
 
 	with open('tcd ml 2019-20 income prediction submission file.csv') as csv_file:
 		csv_reader = csv.reader(csv_file, delimiter=',')
@@ -223,6 +233,17 @@ X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_
 #print("")
 #print(rms)
 #print("")
+
+# Xgboost
+X_train['Country'] = pd.to_numeric(X_train['Country'])
+X_test['Country'] = pd.to_numeric(X_test['Country'])
+print(X_train.dtypes)
+xgboost = XGBRegressor()
+xgboost.fit(X_train, y_train)
+print(xgboost)
+y_pred = xgboost.predict(X_test)
+accuracy = xgboost.score(X_test, y_test)
+print("Accuracy: %.2f%%" % (accuracy * 100.0))
 
 #print(X_test.head())
 #print(y_test.head())
