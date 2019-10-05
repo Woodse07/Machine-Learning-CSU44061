@@ -10,7 +10,10 @@ from sklearn.base import TransformerMixin
 from pycountry_convert import country_alpha2_to_continent_code, country_name_to_country_alpha2
 from sklearn import svm
 from sklearn.ensemble import RandomForestRegressor
-#blah
+from sklearn import neural_network
+from sklearn.metrics import mean_squared_error
+from math import sqrt
+
 # Functions
 def test_model(X, Y, country_grouped):
 	test_data = pd.read_csv('tcd ml 2019-20 income prediction test (without labels).csv')
@@ -40,6 +43,8 @@ def test_model(X, Y, country_grouped):
 	# Dropping useless features
 	test_data = drop_features(test_data)
 
+	print(test_data['Age'].unique())
+
 	# Encoding Features
 	test_data.drop(['Income'], axis=1, inplace=True)
 	test_data = encode_features(test_data)
@@ -56,9 +61,17 @@ def test_model(X, Y, country_grouped):
 	#y_pred = regr.predict(test_data)
 
 	# Random Forest Regression
-	rf = RandomForestRegressor(n_estimators = 1000, max_depth=10)
-	rf.fit(X, Y)
-	y_pred = rf.predict(test_data)
+	#rf = RandomForestRegressor(n_estimators = 1000, max_depth=10)
+	#rf.fit(X, Y)
+	#y_pred = rf.predict(test_data)
+
+	print(X.columns)
+	print(test_data.columns)
+
+	# Neural Net
+	regr = neural_network.MLPRegressor(solver = 'lbfgs', learning_rate = 'constant', activation = 'relu', verbose = True, shuffle = False, hidden_layer_sizes=(100,100,100), early_stopping = True)
+	regr.fit(X, Y)
+	y_pred = regr.predict(test_data)
 
 	with open('tcd ml 2019-20 income prediction submission file.csv') as csv_file:
 		csv_reader = csv.reader(csv_file, delimiter=',')
@@ -77,8 +90,8 @@ def test_model(X, Y, country_grouped):
 
 def simplify_ages(df):
 	df.Age = df.Age.fillna(-0.5)
-	bins = (0,15,20,25,30,35,40,50,60,120)
-	group_names = ['0-15', '15-20', '20-25', '25-30', '30-35', '35-40', '40-50', '50-60', '60-120']
+	bins = (0,15,20,25,30,35,40,50,60,150)
+	group_names = ['0-15', '15-20', '20-25', '25-30', '30-35', '35-40', '40-50', '50-60', '60-150']
 	df.Age = pd.cut(df.Age, bins, labels=group_names)
 	return df
 
@@ -124,10 +137,21 @@ def encode_features(df):
 	for feature in features:
 		le = preprocessing.LabelEncoder()
 		df[feature] = le.fit_transform(df[feature].astype(str))
-	df.loc[df['Gender'] == 'other', 'Gender'] = 'unknown'
 	df = pd.concat([df,pd.get_dummies(df['Gender'], prefix='Gender')], axis=1)
+	df = pd.concat([df,pd.get_dummies(df['Age'], prefix='Age')], axis=1)
+	df = pd.concat([df,pd.get_dummies(df['Year of Record'], prefix='YOR')], axis=1)
+	df = pd.concat([df,pd.get_dummies(df['Size of City'], prefix='SOC')], axis=1)
+	df = pd.concat([df,pd.get_dummies(df['University Degree'], prefix='Degree')], axis=1)
+	df = pd.concat([df,pd.get_dummies(df['Body Height [cm]'], prefix='Height')], axis=1)
 	df.drop(['Gender'], axis=1, inplace=True)
 	df.drop(['Gender_male'], axis=1, inplace=True)
+	df.drop(['Age'], axis=1, inplace=True)
+	df.drop(['Year of Record'], axis=1, inplace=True)
+	df.drop(['Size of City'], axis=1, inplace=True)
+	df.drop(['University Degree'], axis=1, inplace=True)
+	df.drop(['Body Height [cm]'], axis=1, inplace=True)
+	df['Country'] = df['Country'] / df['Country'].max()
+	df['Profession'] = df['Profession'] / df['Profession'].max()
 	return df
 
 
@@ -146,6 +170,8 @@ train_data, country_grouped = simplify_country(train_data)
 
 # Dropping useless features
 train_data = drop_features(train_data)
+
+print(train_data['Age'].unique())
 
 # Encoding Features
 train_data = encode_features(train_data)
@@ -177,10 +203,10 @@ X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_
 #print(regr.score(X_test, y_test))
 
 # Random Forest Regression
-rf = RandomForestRegressor(n_estimators = 100, max_depth=10)
-rf.fit(X_train, y_train)
-y_pred = rf.predict(X_test)
-print(rf.score(X_test, y_test))
+#rf = RandomForestRegressor(n_estimators = 100, max_depth=10)
+#rf.fit(X_train, y_train)
+#y_pred = rf.predict(X_test)
+#print(rf.score(X_test, y_test))
 
 # SGD Regressor
 #regr = linear_model.SGDRegressor()
@@ -188,23 +214,21 @@ print(rf.score(X_test, y_test))
 #y_pred = regr.predict(X_test)
 #print(regr.score(X_test, y_test))
 
-print(y_test.head())
-print("\n")
-for i in range(5):
-	print(y_pred[i])
+# Neural Net
+#regr = neural_network.MLPRegressor(solver = 'lbfgs', learning_rate = 'constant', activation = 'relu', verbose = True, shuffle = False, hidden_layer_sizes=(100,100,100), early_stopping = True)
+#regr.fit(X_train, y_train)
+#y_pred = regr.predict(X_test)
+#print(regr.score(X_test, y_test))
+#rms = sqrt(mean_squared_error(y_test, y_pred))
+#print("")
+#print(rms)
+#print("")
+
+#print(X_test.head())
+#print(y_test.head())
+#print("\n")
+#for i in range(5):
+#	print(y_pred[i])
 
 
 test_model(X, Y, country_grouped)
-
-
-
-
-
-
-
-
-
-
-
-
-
