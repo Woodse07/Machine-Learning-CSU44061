@@ -160,8 +160,8 @@ def encode_features(df):
 	df.drop(['Size of City'], axis=1, inplace=True)
 	df.drop(['University Degree'], axis=1, inplace=True)
 	df.drop(['Body Height [cm]'], axis=1, inplace=True)
-	df['Country'] = df['Country'] / df['Country'].max()
-	df['Profession'] = df['Profession'] / df['Profession'].max()
+	#df['Country'] = df['Country'] / df['Country'].max()
+	#df['Profession'] = df['Profession'] / df['Profession'].max()
 	return df
 
 
@@ -245,11 +245,11 @@ y_pred = xgboost.predict(X_test)
 accuracy = xgboost.score(X_test, y_test)
 print("Accuracy: %.2f%%" % (accuracy * 100.0))
 
-#print(X_test.head())
-#print(y_test.head())
-#print("\n")
-#for i in range(5):
-#	print(y_pred[i])
+print(X_test.head())
+print(y_test.head())
+print("\n")
+for i in range(5):
+	print(y_pred[i])
 
 
-test_model(X, Y, country_grouped)
+#test_model(X, Y, country_grouped)
